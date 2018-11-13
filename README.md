@@ -1,2 +1,3 @@
 # AES-Encryption
-Checking
+g++ trace.cpp main.cpp -o main
+./main
