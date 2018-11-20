@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include "trace.h"
 
 typedef unsigned char byte;
 

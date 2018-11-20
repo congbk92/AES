@@ -8,9 +8,8 @@ class Encrypt: public AES
 {
 public:
 	Encrypt();
-	virtual void MixColumns(byte State[4][4]);
-	virtual void setOperation();
-	virtual void executeAES(byte State[4][4], byte operation);
+	void MixColumns(byte* State);
+	void ExecuteAES(byte* State);
 	~Encrypt();
 };
 
