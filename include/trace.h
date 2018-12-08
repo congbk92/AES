@@ -4,7 +4,7 @@
 #include <iostream>
 #include <fstream>
 
-//define NO_TRACE
+
 #ifndef NO_TRACE
 
 #define TRACE(...)		Tracer::getInstance()->writeLogRespectedLV(__FILE__, __LINE__, __func__,__VA_ARGS__)
@@ -36,5 +36,6 @@ class Tracer
 
 #else
 #define	TRACE(...)			//do nothing
+#define TRACE_STATE
 #endif /* NO_TRACE */
 #endif /* ___TRACE_H___ */

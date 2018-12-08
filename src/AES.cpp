@@ -204,7 +204,7 @@ void AES::setKeySize(int keySize)
 		_numRound = 10;
 		_keyExp = 4;
 	}
-	else if(_keySize == 196)
+	else if(_keySize == 192)
 	{
 		_numRound = 12;
 		_keyExp = 6;

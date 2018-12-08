@@ -3,7 +3,7 @@ TARGET = main
 CC       = g++
 CFLAGS   = -g -Wall
 
-LDFLAGS  = 
+LDFLAGS  =
 
 INCLUDES = -I./include
 
