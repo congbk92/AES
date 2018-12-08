@@ -8,8 +8,9 @@ Encrypt::Encrypt()
 void Encrypt::MixColumns(byte* State)
 {
     byte tmp[4];
+    int row;
 
-	for (int row = 0; row < 4; ++row)
+	for (row = 0; row < 4; ++row)
 	{
 		tmp[0] = GM2[State[row*4 + 0]] ^ GM3[State[row*4 + 1]] ^ State[row*4 + 2] ^ State[row*4 + 3];
 		tmp[1] = State[row*4 + 0] ^ GM2[State[row*4 + 1]] ^ GM3[State[row*4 +2]] ^ State[row*4 + 3];

@@ -28,20 +28,25 @@ void AES::SetOperation(enAlgorithmType algorithmType)
 }
 void AES::AddRoundKey(byte* State, byte round)
 {
+    TRACE("Round %d", round);
+    TRACE("Input");
+	TRACE_STATE(State);
 	if (State == NULL)
 	{
 		TRACE("State is NULL");
 	}
 	else
 	{
-		TRACE("%d", _expandKey[0][0]);
-		TRACE("%d", State[0]);
 	    int st_f, st_c;
-	    for (st_f = 0; st_f < 4; st_f++) {
-	        for (st_c = 0; st_c < 4; st_c++) {
+	    for (st_f = 0; st_f < 4; st_f++)
+	    {
+	        for (st_c = 0; st_c < 4; st_c++)
+	        {
 	            State[st_f*4 + st_c] ^= _expandKey[round * 4 + st_f][st_c];
 	        }
 	    }
+	    TRACE("Output");
+		TRACE_STATE(State);
 	}
 }
 
@@ -115,6 +120,22 @@ void AES::RotateWord(byte* wordToRotate, byte positions)
     }
 }
 
+void AES::rotateWordForKeyExpansion(byte* wordToRotate, byte positions)
+{
+	if (wordToRotate == NULL)
+	{
+		TRACE("wordToRotate is NULL");
+		return;
+	}
+    byte origWord[4] = {wordToRotate[0], wordToRotate[1], wordToRotate[2], wordToRotate[3]};
+    int word_it;
+    for (word_it = 0; word_it < 4; word_it++)
+    {
+		// Rotating to the left
+		wordToRotate[word_it] = origWord[(word_it + positions) % 4];
+    }
+}
+
 void AES::KeyExpansion(byte * Key)
 {
 	if (Key == NULL)
@@ -137,7 +158,7 @@ void AES::KeyExpansion(byte * Key)
         if (Round_it % _keyExp == 0)
         {
             /* Each 8 words, rotate the word and apply the SBOX */
-            RotateWord(temp, 1);
+        	rotateWordForKeyExpansion(temp, 1);
             for (word_it = 0; word_it < 4; ++word_it)
             {
             	temp[word_it] = SBOX[(((temp[word_it]&0xf0) >> 4)*16)+(temp[word_it]&0x0f)];
@@ -159,6 +180,15 @@ void AES::KeyExpansion(byte * Key)
         // Store the new word on th expanded key
         memcpy(_expandKey[Round_it], temp, 4);
     }
+
+    //for debug only
+    for(int i = 0; i < (_numRound + 1); i++)
+    {
+    	byte Key[16];
+    	memcpy(Key, _expandKey[i*4], 16);
+    	TRACE_STATE(Key);
+    }
+
 }
 
 void AES::SetKeySize(int keySize)

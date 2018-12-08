@@ -1,18 +1,28 @@
 #include "configure.h"
 #include "encrypt.h"
+#include "decrypt.h"
+#include <stdio.h>
 
 int main(void)
 {
+	TRACE("Encrypt");
 	Encrypt* Ept = new Encrypt();
-	Ept->SetKeySize(128);
-	byte key[16] = {0x31,0x32,0x33,0x34,0x35,0x36,0x37,0x38,0x31,0x32,0x33,0x34,0x35,0x36,0x37,0x0A};
+	Ept->SetKeySize(256);
+	byte key[] = "abcdefgh01234567abcdefgh01234567";
 	Ept->KeyExpansion(key);
-	byte State[] =  "1234567812345678";
-	//byte Buffer = "1234567812345678";
-	//memcpy(State, Buffer, 16);
-	TRACE("Input = %s", State);
+	byte State[] =  "1234567887654321";
 	Ept->ExecuteAES(State);
-	TRACE("Output = %s", State);
+	TRACE_STATE(State);
 	delete Ept;
+
+	TRACE("Decrypt");
+	Decrypt* Dpt = new Decrypt();
+	Dpt->SetKeySize(256);
+	Dpt->KeyExpansion(key);
+	Dpt->ExecuteAES(State);
+	TRACE_STATE(State);
+	TRACE("%s", State);
+	delete Dpt;
+
 	return 0;
 }

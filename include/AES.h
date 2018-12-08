@@ -27,6 +27,7 @@ protected:
 	void RotateWord(byte* wordToRotate, byte positions);
 	int getNumRound();
 private:
+	void rotateWordForKeyExpansion(byte* wordToRotate, byte positions);
 	int _operation;
 	const byte* _box;
 	byte _expandKey[60][4];
