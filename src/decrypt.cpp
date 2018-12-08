@@ -5,7 +5,7 @@ Decrypt::Decrypt()
 	SetOperation(AES_DECRIPT);
 }
 
-void Decrypt::MixColumns(byte* State)
+void Decrypt::mixColumns(byte* State)
 {
 	byte tmp[4];
 	int row;
@@ -31,7 +31,7 @@ void Decrypt::ExecuteAES(byte* State)
     for (byte round_it = getNumRound() - 1; round_it > 0; round_it--)
     {
         AddRoundKey(State, round_it);
-        MixColumns(State);
+        mixColumns(State);
         ShiftRows(State);
         SubBytes(State);
     }

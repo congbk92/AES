@@ -5,7 +5,7 @@ Encrypt::Encrypt()
 	SetOperation(AES_ENCRYPT);
 }
 
-void Encrypt::MixColumns(byte* State)
+void Encrypt::mixColumns(byte* State)
 {
     byte tmp[4];
     int row;
@@ -33,7 +33,7 @@ void Encrypt::ExecuteAES(byte* State)
     {
         SubBytes(State);
         ShiftRows(State);
-        MixColumns(State);
+        mixColumns(State);
         AddRoundKey(State, round_it);
     }
     SubBytes(State);

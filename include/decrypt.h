@@ -8,9 +8,10 @@ class Decrypt: public AES
 {
 public:
 	Decrypt();
-	void MixColumns(byte* State);
 	void ExecuteAES(byte* State);
 	~Decrypt();
+private:
+	void mixColumns(byte* State);
 };
 
 

@@ -21,7 +21,7 @@ protected:
 	void AddRoundKey(byte* State, byte round);
 	void SubBytes(byte* State);
 	void ShiftRows(byte* State);
-	virtual void MixColumns(byte* State) = 0;
+	virtual void mixColumns(byte* State) = 0;
 	void SetOperation(enAlgorithmType algorithmType);
 	void RotateWord(byte* wordToRotate, byte positions);
 	int getNumRound();

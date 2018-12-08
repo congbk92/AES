@@ -8,9 +8,10 @@ class Encrypt: public AES
 {
 public:
 	Encrypt();
-	void MixColumns(byte* State);
 	void ExecuteAES(byte* State);
 	~Encrypt();
+private:
+	void mixColumns(byte* State);
 };
 
 #endif /* __ENCRYPT_H__ */
