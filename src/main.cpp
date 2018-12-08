@@ -6,19 +6,18 @@
 int main(void)
 {
 	TRACE("Encrypt");
-	Encrypt* Ept = new Encrypt();
-	Ept->SetKeySize(256);
 	byte key[] = "abcdefgh01234567abcdefgh01234567";
-	Ept->KeyExpansion(key);
+	Encrypt* Ept = new Encrypt();
+	Ept->InitAES(key,128);
 	byte State[] =  "1234567887654321";
 	Ept->ExecuteAES(State);
 	TRACE_STATE(State);
+	TRACE("%s", State);
 	delete Ept;
 
 	TRACE("Decrypt");
 	Decrypt* Dpt = new Decrypt();
-	Dpt->SetKeySize(256);
-	Dpt->KeyExpansion(key);
+	Dpt->InitAES(key,128);
 	Dpt->ExecuteAES(State);
 	TRACE_STATE(State);
 	TRACE("%s", State);

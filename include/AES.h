@@ -15,8 +15,7 @@ class AES
 public:
 	AES();
 	virtual void ExecuteAES(byte* State) = 0;
-	void KeyExpansion(byte * Key);
-	void SetKeySize(int keySize);
+	void InitAES(byte* key, int keySize);
 	virtual ~AES();
 protected:
 	void AddRoundKey(byte* State, byte round);
@@ -27,6 +26,8 @@ protected:
 	void RotateWord(byte* wordToRotate, byte positions);
 	int getNumRound();
 private:
+	void keyExpansion(byte * Key);
+	void setKeySize(int keySize);
 	void rotateWordForKeyExpansion(byte* wordToRotate, byte positions);
 	int _operation;
 	const byte* _box;

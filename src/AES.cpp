@@ -4,7 +4,6 @@ AES::AES()
 {
 	_operation = NONE;
 	_box = NULL;
-	//_expandKey = NULL;
 	_keySize = 0;
 	_numRound = 0;
 	_keyExp = 0;
@@ -136,7 +135,13 @@ void AES::rotateWordForKeyExpansion(byte* wordToRotate, byte positions)
     }
 }
 
-void AES::KeyExpansion(byte * Key)
+void AES::InitAES(byte* key, int keySize)
+{
+	setKeySize(keySize);
+	keyExpansion(key);
+}
+
+void AES::keyExpansion(byte * Key)
 {
 	if (Key == NULL)
 	{
@@ -191,7 +196,7 @@ void AES::KeyExpansion(byte * Key)
 
 }
 
-void AES::SetKeySize(int keySize)
+void AES::setKeySize(int keySize)
 {
 	_keySize = keySize;
 	if(_keySize == 128)
