@@ -30,11 +30,11 @@ int main(int argc, char** argv)
 	//ebc mode without salt, md sha1
 //	if()
 
-	if (argc != 5)
+	if (argc != 6)
 	{
 		std::cout<<argc;
-		std::cout<<"Number of pass argument should be 4 and follow the below format:\n";
-		std::cout<<"#type AES (enc_ecb, dec_ecb, enc_cbc, dec_cbc) #key length (128,192,256) #pass #inputfile\n";
+		std::cout<<"Number of pass argument should be 5 and follow the below format:\n";
+		std::cout<<"#type AES (enc_ecb, dec_ecb, enc_cbc, dec_cbc) #key length (128,192,256) #pass #input file #output file\n";
 		return 0;
 	}
 	else
@@ -44,6 +44,7 @@ int main(int argc, char** argv)
 		int keyLenght = atoi(argv[2]);
 		std::string key = argv[3];
 		std::string inputFileName = argv[4];
+		std::string outputFileName = argv[5];
 
 		if(type_aes != "enc_ecb" && type_aes != "dec_ecb" && type_aes != "enc_cbc" && type_aes != "dec_cbc")
 		{
@@ -59,6 +60,15 @@ int main(int argc, char** argv)
 			return 0;
 		}
 
+		std::ifstream f(inputFileName.c_str());
+		if(!f.good())
+		{
+			std::cout<<"The input file is not exist\n";
+			f.close();
+			return 0;
+		}
+		f.close();
+
 		// no salt, no key-derivation function, padding is PKCS#7
 		if(type_aes == "enc_ecb")
 		{
@@ -71,7 +81,7 @@ int main(int argc, char** argv)
 			byte State[16];
 
 			std::ofstream outputFile;
-			outputFile.open ("output.enc", std::ofstream::out);
+			outputFile.open (outputFileName, std::ofstream::out);
 
 			while(true)
 			{
@@ -105,7 +115,7 @@ int main(int argc, char** argv)
 			byte State[16];
 
 			std::ofstream outputFile;
-			outputFile.open ("output.dec", std::ofstream::out);
+			outputFile.open (outputFileName, std::ofstream::out);
 			while(inputFile.peek()!=EOF)
 			{
 				inputFile.read((char*)State,16);
