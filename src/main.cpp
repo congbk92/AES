@@ -68,21 +68,29 @@ int main(int argc, char** argv)
 			std::ifstream inputFile;
 			inputFile.open(inputFileName, std::ios::binary);
 
-			std::ofstream outputFile;
-
 			byte State[16];
-			//int fileSize = inputFile.tellg();
-			//std::cout<<fileSize<<"\n";
-			int i = 0;
+
+			std::ofstream outputFile;
 			outputFile.open ("output.enc", std::ofstream::out);
-			while(inputFile.peek()!=EOF)
+
+			while(true)
 			{
-				i++;
-				inputFile.read((char*)State,16);
+				int extracted = inputFile.read((char*)State,16).gcount();
+				if (extracted < 16)	//padding is PKCS#7
+				{
+					byte paddingValue = 16 - extracted;
+					//std::cout<<(int)paddingValue<<"\n";
+					for (byte i = 16 - paddingValue; i < 16; i++)
+					{
+						State[i] = paddingValue;
+					}
+					Ept->ExecuteAES(State);
+					outputFile.write((const char*)State,16);
+					break;
+				}
 				Ept->ExecuteAES(State);
 				outputFile.write((const char*)State,16);
 			}
-			std::cout<<i<<"\n";
 			outputFile.close();
 			inputFile.close();
 		}
@@ -94,17 +102,25 @@ int main(int argc, char** argv)
 			std::ifstream inputFile;
 			inputFile.open(inputFileName, std::ios::binary);
 
-			std::ofstream outputFile;
-
 			byte State[16];
-			//int fileSize = inputFile.tellg();
-			//std::cout<<fileSize<<"\n";
+
+			std::ofstream outputFile;
 			outputFile.open ("output.dec", std::ofstream::out);
 			while(inputFile.peek()!=EOF)
 			{
 				inputFile.read((char*)State,16);
 				Dpt->ExecuteAES(State);
-				outputFile.write((const char*)State,16);
+				if (inputFile.peek() == EOF)		//removed padding
+				{
+					if(State[15] < 16)
+					{
+						outputFile.write((const char*)State,16 - State[15]);
+					}
+				}
+				else
+				{
+					outputFile.write((const char*)State,16);
+				}
 			}
 			inputFile.close();
 			outputFile.close();
