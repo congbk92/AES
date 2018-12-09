@@ -6,6 +6,13 @@
 #include <iostream>
 #include <fstream>
 
+void xorblock16(byte* block1, byte* block2)		//result save to block1
+{
+	for(int i = 0; i<16; i++)
+	{
+		block1[i] = block1[i]^block2[i];
+	}
+}
 int main(int argc, char** argv)
 {
 	/*
@@ -82,7 +89,6 @@ int main(int argc, char** argv)
 
 			std::ofstream outputFile;
 			outputFile.open (outputFileName, std::ofstream::out);
-
 			while(true)
 			{
 				int extracted = inputFile.read((char*)State,16).gcount();
@@ -103,6 +109,7 @@ int main(int argc, char** argv)
 			}
 			outputFile.close();
 			inputFile.close();
+			delete Ept;
 		}
 		else if(type_aes == "dec_ecb")
 		{
@@ -134,6 +141,86 @@ int main(int argc, char** argv)
 			}
 			inputFile.close();
 			outputFile.close();
+			delete Dpt;
+		}
+		else if(type_aes == "enc_cbc")
+		{
+			Encrypt* Ept = new Encrypt();
+			Ept->InitAES((byte*)key.c_str(),keyLenght);
+
+			std::ifstream inputFile;
+			inputFile.open(inputFileName, std::ios::binary);
+
+			byte State[16];
+
+			std::ofstream outputFile;
+			outputFile.open (outputFileName, std::ofstream::out);
+
+			byte initVector[16];
+			memset(initVector,0,sizeof(initVector));
+			bool flagFinish = false;
+			while(!flagFinish)
+			{
+				int extracted = inputFile.read((char*)State,16).gcount();
+				if (extracted < 16)	//padding is PKCS#7
+				{
+					byte paddingValue = 16 - extracted;
+					//std::cout<<(int)paddingValue<<"\n";
+					for (byte i = 16 - paddingValue; i < 16; i++)
+					{
+						State[i] = paddingValue;
+					}
+					flagFinish = true;
+				}
+				xorblock16(State,initVector);
+				Ept->ExecuteAES(State);
+				memcpy(initVector,State,sizeof(initVector));
+				outputFile.write((const char*)State,16);
+			}
+			outputFile.close();
+			inputFile.close();
+			delete Ept;
+		}
+		else if(type_aes == "dec_cbc")
+		{
+			Decrypt* Dpt = new Decrypt();
+			Dpt->InitAES((byte*)key.c_str(),keyLenght);
+
+			std::ifstream inputFile;
+			inputFile.open(inputFileName, std::ios::binary);
+
+			byte State[16];
+
+			std::ofstream outputFile;
+			outputFile.open (outputFileName, std::ofstream::out);
+
+			byte initVector[16];
+			byte ciphertext[16];
+			memset(initVector,0,sizeof(initVector));
+			memset(initVector,0,sizeof(ciphertext));
+
+			while(inputFile.peek()!=EOF)
+			{
+				inputFile.read((char*)State,16);
+				memcpy(ciphertext,State,sizeof(ciphertext));
+				Dpt->ExecuteAES(State);
+				xorblock16(State,initVector);
+				memcpy(initVector,ciphertext,sizeof(ciphertext));
+				if (inputFile.peek() == EOF)		//removed padding
+				{
+					if(State[15] < 16)
+					{
+						outputFile.write((const char*)State,16 - State[15]);
+					}
+				}
+				else
+				{
+					outputFile.write((const char*)State,16);
+				}
+			}
+			inputFile.close();
+			outputFile.close();
+			delete Dpt;
 		}
 	}
 
