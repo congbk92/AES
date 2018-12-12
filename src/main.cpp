@@ -15,67 +15,74 @@ void xorblock16(byte* block1, byte* block2)		//result save to block1
 }
 int main(int argc, char** argv)
 {
-	/*
-	TRACE("Encrypt");
-	byte key[] = "abcdefgh01234567abcdefgh01234567";
-	Encrypt* Ept = new Encrypt();
-	Ept->InitAES(key,128);
-	byte State[] =  "1234567887654321";
-	Ept->ExecuteAES(State);
-	TRACE_STATE(State);
-	TRACE("%s", State);
-	delete Ept;
-
-	TRACE("Decrypt");
-	Decrypt* Dpt = new Decrypt();
-	Dpt->InitAES(key,128);
-	Dpt->ExecuteAES(State);
-	TRACE_STATE(State);
-	TRACE("%s", State);
-	delete Dpt;
-	*/
-	//ebc mode without salt, md sha1
-//	if()
-
-	if (argc != 6)
+	while(true)
 	{
-		std::cout<<argc;
-		std::cout<<"Number of pass argument should be 5 and follow the below format:\n";
-		std::cout<<"#type AES (enc_ecb, dec_ecb, enc_cbc, dec_cbc) #key length (128,192,256) #pass #input file #output file\n";
-		return 0;
-	}
-	else
-	{
-		std::string type_aes = argv[1];
-		std::string sKeyLenght = argv[2];
-		int keyLenght = atoi(argv[2]);
-		std::string key = argv[3];
-		std::string inputFileName = argv[4];
-		std::string outputFileName = argv[5];
+		//Checking input
+		std::cout<<"Please input follow the below format:\n";
+		std::cout<<"#type_AES #key_length #file_key #input_file #output_file\n";
+		std::cout<<"#type_AES: enc_ecb, dec_ecb, enc_cbc, dec_cbc\n";
+		std::cout<<"#key_length: 128, 192, 256\n";
+		std::cout<<"Or press Q to quit\n";
+
+		std::string type_aes;
+		int keyLenght;
+		std::string key;
+		std::string keyFile;
+		std::string inputFileName;
+		std::string outputFileName;
+
+		if(!(std::cin>>type_aes>>keyLenght>>keyFile>>inputFileName>>outputFileName))
+		{
+			if (type_aes == "q")
+			{
+				break;
+			}
+
+			std::cin.clear();
+			std::cin.ignore(10000,'\n');
+			continue;
+		}
 
 		if(type_aes != "enc_ecb" && type_aes != "dec_ecb" && type_aes != "enc_cbc" && type_aes != "dec_cbc")
 		{
 			std::cout<<"Invalid type of AES\n";
 			std::cout<<"Type of AES should be enc_ecb, dec_ecb, enc_cbc or dec_cbc\n";
-			return 0;
+			continue;
 		}
 
-		if(sKeyLenght != "128" && sKeyLenght != "192" && sKeyLenght != "256")
+		if(keyLenght != 128 && keyLenght != 192 && keyLenght != 256)
 		{
 			std::cout<<"Invalid key length\n";
 			std::cout<<"key length should be 128, 192, 256\n";
-			return 0;
+			continue;
 		}
 
-		std::ifstream f(inputFileName.c_str());
+		std::ifstream f(keyFile.c_str());
+		if(!f.good())
+		{
+			std::cout<<"The key file is not exist\n";
+			f.close();
+			continue;
+		}
+		std::getline(f,key);
+		f.close();
+
+		f.open(inputFileName.c_str());
 		if(!f.good())
 		{
 			std::cout<<"The input file is not exist\n";
 			f.close();
-			return 0;
+			continue;
 		}
 		f.close();
 
+		TRACE("type_AES: %s", type_aes.c_str());
+		TRACE("key_length: %d", keyLenght);
+		TRACE("key: %s", key.c_str());
+		TRACE("input_file: %s", inputFileName);
+		TRACE("output_file: %s", outputFileName);
+
+		//begin encrypt or Decrypt
 		// no salt, no key-derivation function, padding is PKCS#7
 		if(type_aes == "enc_ecb")
 		{
@@ -88,7 +95,7 @@ int main(int argc, char** argv)
 			byte State[16];
 
 			std::ofstream outputFile;
-			outputFile.open (outputFileName, std::ofstream::out);
+			outputFile.open (outputFileName, std::ofstream::out | std::ios::binary);
 			while(true)
 			{
 				int extracted = inputFile.read((char*)State,16).gcount();
@@ -222,7 +229,19 @@ int main(int argc, char** argv)
 			outputFile.close();
 			delete Dpt;
 		}
-	}
 
+		std::cout<<"The AES Execution is done, Press c to continue, other to quit\n";
+
+		std::string inputStringTmp;
+		std::cin>>inputStringTmp;
+		if(inputStringTmp == "c")
+		{
+			continue;
+		}
+		else
+		{
+			break;
+		}
+	}
 	return 0;
 }

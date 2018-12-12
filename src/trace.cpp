@@ -1,7 +1,7 @@
 #include <stddef.h>  // defines NULL
 #include "trace.h"
 
-#ifndef NO_TRACE
+#ifdef DEBUG
 Tracer* Tracer::p_instance = NULL; 
 Tracer* Tracer::getInstance()
 {
