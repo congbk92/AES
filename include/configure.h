@@ -6,8 +6,7 @@
 #include <string.h>
 #include <time.h>
 #include "trace.h"
-
-typedef unsigned char byte;
+#include "util.h"
 
 #include "configure.h"
 // SBOX matrix definition

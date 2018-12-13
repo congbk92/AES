@@ -6,13 +6,11 @@
 #include <iostream>
 #include <fstream>
 
-void xorblock16(byte* block1, byte* block2)		//result save to block1
-{
-	for(int i = 0; i<16; i++)
-	{
-		block1[i] = block1[i]^block2[i];
-	}
-}
+
+#define PAGE_SIZE		4096
+#define BUFF_SIZE		PAGE_SIZE*2
+
+
 int main(int argc, char** argv)
 {
 	while(true)
@@ -26,7 +24,7 @@ int main(int argc, char** argv)
 
 		std::string type_aes;
 		int keyLenght;
-		std::string key;
+		std::string key(32,0);
 		std::string keyFile;
 		std::string inputFileName;
 		std::string outputFileName;
@@ -64,7 +62,9 @@ int main(int argc, char** argv)
 			f.close();
 			continue;
 		}
-		std::getline(f,key);
+		std::string keyString;
+		std::getline(f,keyString);
+		hexStrToBinaryStr((byte*)keyString.c_str(), (byte*)key.c_str(), keyString.length());
 		f.close();
 
 		f.open(inputFileName.c_str());
@@ -79,156 +79,138 @@ int main(int argc, char** argv)
 		TRACE("type_AES: %s", type_aes.c_str());
 		TRACE("key_length: %d", keyLenght);
 		TRACE("key: %s", key.c_str());
-		TRACE("input_file: %s", inputFileName);
-		TRACE("output_file: %s", outputFileName);
+		TRACE("input_file: %s", inputFileName.c_str());
+		TRACE("output_file: %s", outputFileName.c_str());
 
 		//begin encrypt or Decrypt
 		// no salt, no key-derivation function, padding is PKCS#7
-		if(type_aes == "enc_ecb")
+		AES* pnt = NULL;
+		if (type_aes == "enc_ecb" || type_aes == "enc_cbc")
 		{
-			Encrypt* Ept = new Encrypt();
-			Ept->InitAES((byte*)key.c_str(),keyLenght);
+			pnt = new Encrypt();
+		}
+		else if (type_aes == "dec_ecb" || type_aes == "dec_cbc")
+		{
+			pnt = new Decrypt();
+		}
 
-			std::ifstream inputFile;
-			inputFile.open(inputFileName, std::ios::binary);
+		pnt->InitAES((byte*)key.c_str(),keyLenght);
 
-			byte State[16];
+		std::ifstream inputFile;
+		inputFile.open(inputFileName, std::ios::binary);
 
-			std::ofstream outputFile;
-			outputFile.open (outputFileName, std::ofstream::out | std::ios::binary);
-			while(true)
+		byte* State = NULL;
+
+		std::ofstream outputFile;
+		outputFile.open (outputFileName, std::ofstream::out | std::ios::binary);
+
+		byte cipherText[16];
+		memset(cipherText,0,sizeof(cipherText));
+		byte initVector[16];
+		memset(initVector,0,sizeof(initVector));
+
+		byte bufferIn[BUFF_SIZE];
+		byte bufferOut[BUFF_SIZE];
+
+		int i = 0;
+		int extracted = 0;
+		while(true)
+		{
+			if (i == 0)
 			{
-				int extracted = inputFile.read((char*)State,16).gcount();
-				if (extracted < 16)	//padding is PKCS#7
+				extracted = inputFile.read((char*)bufferIn,BUFF_SIZE).gcount();
+				TRACE("extracted = %d", extracted);
+			}
+			State = reinterpret_cast<byte*>(bufferIn+i);
+
+			if (type_aes == "enc_ecb")
+			{
+				if (inputFile.peek() == EOF && extracted < 16)	//padding is PKCS#7
 				{
 					byte paddingValue = 16 - extracted;
-					//std::cout<<(int)paddingValue<<"\n";
-					for (byte i = 16 - paddingValue; i < 16; i++)
+					if(extracted !=0)
 					{
-						State[i] = paddingValue;
+						memset(State + 16 - paddingValue,paddingValue,paddingValue);
 					}
-					Ept->ExecuteAES(State);
-					outputFile.write((const char*)State,16);
+				}
+				pnt->ExecuteAES(State);
+			}
+			else if(type_aes == "dec_ecb")
+			{
+				pnt->ExecuteAES(State);
+			}
+			else if (type_aes == "enc_cbc")
+			{
+				if (inputFile.peek() == EOF && extracted < 16)	//padding is PKCS#7
+				{
+					byte paddingValue = 16 - extracted;
+					if(extracted !=0)
+					{
+						TRACE("paddingValue = %d", paddingValue);
+						memset(State + 16 - paddingValue,paddingValue,paddingValue);
+						TRACE("State[15] = %d",  State[15]);
+					}
+				}
+				xorblock16(State,cipherText);
+				pnt->ExecuteAES(State);
+				memcpy(cipherText,State,sizeof(cipherText));
+			}
+			else if (type_aes == "dec_cbc")
+			{
+				memcpy(cipherText,State,sizeof(cipherText));
+				pnt->ExecuteAES(State);
+				xorblock16(State,initVector);
+				memcpy(initVector,cipherText,sizeof(cipherText));
+			}
+
+			memcpy(bufferOut + i,State,16);
+			TRACE("State[15] = %d",  State[15]);
+			i+=16;
+			if (i == BUFF_SIZE)
+			{
+				i = 0;
+				if (inputFile.eof() && (type_aes == "enc_cbc" || type_aes == "enc_ecb"))
+				{
+					memset(bufferOut + i,16,16);
+					outputFile.write((const char*)bufferOut, i+16);
 					break;
 				}
-				Ept->ExecuteAES(State);
-				outputFile.write((const char*)State,16);
-			}
-			outputFile.close();
-			inputFile.close();
-			delete Ept;
-		}
-		else if(type_aes == "dec_ecb")
-		{
-			Decrypt* Dpt = new Decrypt();
-			Dpt->InitAES((byte*)key.c_str(),keyLenght);
-
-			std::ifstream inputFile;
-			inputFile.open(inputFileName, std::ios::binary);
-
-			byte State[16];
-
-			std::ofstream outputFile;
-			outputFile.open (outputFileName, std::ofstream::out);
-			while(inputFile.peek()!=EOF)
-			{
-				inputFile.read((char*)State,16);
-				Dpt->ExecuteAES(State);
-				if (inputFile.peek() == EOF)		//removed padding
+				else if (inputFile.eof() && (type_aes == "dec_cbc" || type_aes == "dec_ecb"))
 				{
-					if(State[15] < 16)
-					{
-						outputFile.write((const char*)State,16 - State[15]);
-					}
+					outputFile.write((const char*)bufferOut, i - State[15]);
+					break;
 				}
 				else
 				{
-					outputFile.write((const char*)State,16);
+					outputFile.write((const char*)bufferOut,BUFF_SIZE);
 				}
+
 			}
-			inputFile.close();
-			outputFile.close();
-			delete Dpt;
-		}
-		else if(type_aes == "enc_cbc")
-		{
-			Encrypt* Ept = new Encrypt();
-			Ept->InitAES((byte*)key.c_str(),keyLenght);
-
-			std::ifstream inputFile;
-			inputFile.open(inputFileName, std::ios::binary);
-
-			byte State[16];
-
-			std::ofstream outputFile;
-			outputFile.open (outputFileName, std::ofstream::out);
-
-			byte initVector[16];
-			memset(initVector,0,sizeof(initVector));
-			bool flagFinish = false;
-			while(!flagFinish)
+			else if (inputFile.eof() && extracted == 16 && (type_aes == "dec_cbc" || type_aes == "dec_ecb"))
 			{
-				int extracted = inputFile.read((char*)State,16).gcount();
-				if (extracted < 16)	//padding is PKCS#7
-				{
-					byte paddingValue = 16 - extracted;
-					//std::cout<<(int)paddingValue<<"\n";
-					for (byte i = 16 - paddingValue; i < 16; i++)
-					{
-						State[i] = paddingValue;
-					}
-					flagFinish = true;
-				}
-				xorblock16(State,initVector);
-				Ept->ExecuteAES(State);
-				memcpy(initVector,State,sizeof(initVector));
-				outputFile.write((const char*)State,16);
+				outputFile.write((const char*)bufferOut, i - State[15]);
+				TRACE("State[15] = %d , i = %d",  State[15], i);
+				break;
 			}
-			outputFile.close();
-			inputFile.close();
-			delete Ept;
-		}
-		else if(type_aes == "dec_cbc")
-		{
-			Decrypt* Dpt = new Decrypt();
-			Dpt->InitAES((byte*)key.c_str(),keyLenght);
-
-			std::ifstream inputFile;
-			inputFile.open(inputFileName, std::ios::binary);
-
-			byte State[16];
-
-			std::ofstream outputFile;
-			outputFile.open (outputFileName, std::ofstream::out);
-
-			byte initVector[16];
-			byte ciphertext[16];
-			memset(initVector,0,sizeof(initVector));
-			memset(initVector,0,sizeof(ciphertext));
-
-			while(inputFile.peek()!=EOF)
+			else if (inputFile.eof() && extracted < 16 && (type_aes == "enc_cbc" || type_aes == "enc_ecb"))
 			{
-				inputFile.read((char*)State,16);
-				memcpy(ciphertext,State,sizeof(ciphertext));
-				Dpt->ExecuteAES(State);
-				xorblock16(State,initVector);
-				memcpy(initVector,ciphertext,sizeof(ciphertext));
-				if (inputFile.peek() == EOF)		//removed padding
+				TRACE("State[15] = %d , i = %d",  State[15], i);
+				if (extracted != 0)
 				{
-					if(State[15] < 16)
-					{
-						outputFile.write((const char*)State,16 - State[15]);
-					}
+					outputFile.write((const char*)bufferOut, i);
 				}
 				else
 				{
-					outputFile.write((const char*)State,16);
+					memset(bufferOut + i,16,16);
+					outputFile.write((const char*)bufferOut, i+16);
 				}
+				break;
 			}
-			inputFile.close();
-			outputFile.close();
-			delete Dpt;
+			extracted -=16;
 		}
+		outputFile.close();
+		inputFile.close();
+		delete pnt;
 
 		std::cout<<"The AES Execution is done, Press c to continue, other to quit\n";
 

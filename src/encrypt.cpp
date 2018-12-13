@@ -26,7 +26,7 @@ void Encrypt::mixColumns(byte* State)
 
 void Encrypt::ExecuteAES(byte* State)
 {
-	TRACE("Input = %s", State);
+	TRACE_STATE(State);
 	int round_it;
     AddRoundKey(State, 0);
     for (round_it = 1; round_it < getNumRound(); round_it++)

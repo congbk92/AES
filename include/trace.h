@@ -4,7 +4,7 @@
 #include <iostream>
 #include <fstream>
 
-
+//#define DEBUG
 #ifdef DEBUG
 
 #define TRACE(...)		Tracer::getInstance()->writeLogRespectedLV(__FILE__, __LINE__, __func__,__VA_ARGS__)

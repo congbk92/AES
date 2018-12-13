@@ -2,6 +2,7 @@
 #define __AES_H__
 
 #include "configure.h"
+#include "util.h"
 
 enum enAlgorithmType
 {
