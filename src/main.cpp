@@ -6,73 +6,52 @@
 #include <iostream>
 #include <fstream>
 
-
 #define PAGE_SIZE		4096
 #define BUFF_SIZE		PAGE_SIZE*2
 
 
+void usage(int line){
+	//Checking input
+	std::cout<<line<<std::endl;
+	std::cout<<"Please input follow the below format:\n";
+	std::cout<<"#type_AES #key_length #key #input_file #output_file\n";
+	std::cout<<"#type_AES: enc_ecb, dec_ecb, enc_cbc, dec_cbc\n";
+	std::cout<<"#key_length: 128, 192, 256\n";
+	std::cout<<"#key: key in hex format\n";
+}
+
 int main(int argc, char** argv)
 {
-	while(true)
-	{
-		//Checking input
-		std::cout<<"Please input follow the below format:\n";
-		std::cout<<"#type_AES #key_length #file_key #input_file #output_file\n";
-		std::cout<<"#type_AES: enc_ecb, dec_ecb, enc_cbc, dec_cbc\n";
-		std::cout<<"#key_length: 128, 192, 256\n";
-		std::cout<<"Or press Q to quit\n";
+	//while(true)
 
-		std::string type_aes;
-		int keyLenght;
+	if (argc != 6 || strcmp(argv[1], "--help") == 0){
+		usage(__LINE__);
+	}
+	else {
+		std::string type_aes(argv[1]);
+		int keyLenght = std::stoi(argv[2]);
+		std::string keyHex(argv[3]);
 		std::string key(32,0);
-		std::string keyFile;
-		std::string inputFileName;
-		std::string outputFileName;
-
-		if(!(std::cin>>type_aes>>keyLenght>>keyFile>>inputFileName>>outputFileName))
-		{
-			if (type_aes == "q")
-			{
-				break;
-			}
-
-			std::cin.clear();
-			std::cin.ignore(10000,'\n');
-			continue;
+		std::string inputFileName(argv[4]);
+		std::string outputFileName(argv[5]);
+		if(type_aes != "enc_ecb" && type_aes != "dec_ecb" && type_aes != "enc_cbc" && type_aes != "dec_cbc") {
+			usage(__LINE__);
+			return 0;
+		}
+		
+		if(keyLenght != 128 && keyLenght != 192 && keyLenght != 256) {
+			usage(__LINE__);
+			return 0;
 		}
 
-		if(type_aes != "enc_ecb" && type_aes != "dec_ecb" && type_aes != "enc_cbc" && type_aes != "dec_cbc")
-		{
-			std::cout<<"Invalid type of AES\n";
-			std::cout<<"Type of AES should be enc_ecb, dec_ecb, enc_cbc or dec_cbc\n";
-			continue;
-		}
+		hexStrToBinaryStr((byte*)keyHex.c_str(), (byte*)key.c_str(), keyHex.length());
 
-		if(keyLenght != 128 && keyLenght != 192 && keyLenght != 256)
-		{
-			std::cout<<"Invalid key length\n";
-			std::cout<<"key length should be 128, 192, 256\n";
-			continue;
-		}
-
-		std::ifstream f(keyFile.c_str());
-		if(!f.good())
-		{
-			std::cout<<"The key file is not exist\n";
-			f.close();
-			continue;
-		}
-		std::string keyString;
-		std::getline(f,keyString);
-		hexStrToBinaryStr((byte*)keyString.c_str(), (byte*)key.c_str(), keyString.length());
-		f.close();
-
-		f.open(inputFileName.c_str());
+		std::ifstream f(inputFileName.c_str());
 		if(!f.good())
 		{
 			std::cout<<"The input file is not exist\n";
 			f.close();
-			continue;
+			return 0;
 		}
 		f.close();
 
@@ -211,19 +190,7 @@ int main(int argc, char** argv)
 		outputFile.close();
 		inputFile.close();
 		delete pnt;
-
-		std::cout<<"The AES Execution is done, Press c to continue, other to quit\n";
-
-		std::string inputStringTmp;
-		std::cin>>inputStringTmp;
-		if(inputStringTmp == "c")
-		{
-			continue;
-		}
-		else
-		{
-			break;
-		}
 	}
+
 	return 0;
 }
